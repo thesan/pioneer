@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from 'react'
+import { useApolloClient } from '@apollo/client'
+import React, { useEffect, useMemo, useState } from 'react'
 
 import { PageHeaderWithHint } from '@/app/components/PageHeaderWithHint'
 import { PageLayout } from '@/app/components/PageLayout'
@@ -20,10 +21,21 @@ import { Councilor } from '@/council/types'
 import { CouncilTabs } from './components/CouncilTabs'
 
 export const Council = () => {
+  const { stage: electionStage } = useElectionStage()
+
+  const apolloClient = useApolloClient()
+  useEffect(() => {
+    apolloClient.refetchQueries({ include: 'active' }) // to reload council activities in each election stage
+  }, [electionStage])
+
   const { council, isLoading } = useElectedCouncil()
   const { idlePeriodRemaining, budget, reward } = useCouncilStatistics(council?.electedAt.number)
   const { activities } = useCouncilActivities()
-  const { stage: electionStage } = useElectionStage()
+
+  if (electionStage === 'inactive' && idlePeriodRemaining?.lt(BN_ZERO)) {
+    apolloClient.refetchQueries({ include: 'active' }) // to reload elected council
+  }
+
   const [order, setOrder] = useState<CouncilOrder>({ key: 'member' })
   const { councilors } = useCouncilorWithDetails(council)
   const sortedCouncilors = useMemo(() => councilors.sort(sortBy(order)), [councilors])
@@ -32,7 +44,7 @@ export const Council = () => {
   const main = (
     <MainPanel>
       <Statistics>
-        {electionStage === 'inactive' ? (
+        {electionStage === 'inactive' && idlePeriodRemaining?.gt(BN_ZERO) ? (
           <BlockDurationStatistics title="Normal period remaining length" value={idlePeriodRemaining} />
         ) : (
           <ViewElectionButton />
