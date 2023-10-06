@@ -540,6 +540,7 @@ export const EmailSubscriptionModalSubscribe: Story = {
 // Test Email Confirmation Modal
 // ----------------------------------------------------------------------------
 export const EmailConfirmationModal: Story = {
+  parameters: { router: { href: `/?${EMAIL_VERIFICATION_TOKEN_SEARCH_PARAM}=${MOCK_VERIFICATION_TOKEN}` } },
   args: {
     isConfirmingEmail: true,
   },
